@@ -1,1123 +1,578 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Unfulfilled Orders Report — Susan Shaw</title>
-  <style>
-    :root {
-      --brand:    #1a1a2e;
-      --accent:   #c9a84c;
-      --bg:       #f8f7f4;
-      --surface:  #ffffff;
-      --border:   #e5e2db;
-      --text:     #2d2d2d;
-      --muted:    #7a7a7a;
-      --red:      #c0392b;
-      --orange:   #d35400;
-      --green:    #27ae60;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    header {
-      background: var(--brand);
-      color: white;
-      padding: 24px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    header h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.3px; }
-    header .meta { font-size: 12px; opacity: 0.7; }
-    .stats {
-      display: flex;
-      gap: 16px;
-      padding: 20px 32px;
-      flex-wrap: wrap;
-    }
-    .stat-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px 24px;
-      min-width: 160px;
-    }
-    .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 4px; }
-    .stat-card .value { font-size: 26px; font-weight: 700; color: var(--brand); }
-    .stat-card .value.highlight { color: var(--accent); }
-    .table-wrap {
-      padding: 0 32px 40px;
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    thead th {
-      background: var(--brand);
-      color: white;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      padding: 12px 14px;
-      text-align: left;
-      white-space: nowrap;
-    }
-    tbody tr { border-bottom: 1px solid var(--border); }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: #faf9f7; }
-    td { padding: 12px 14px; vertical-align: top; }
-    .order-link { color: var(--brand); font-weight: 600; }
-    .email { color: var(--muted); font-size: 12px; }
-    .price { font-weight: 600; white-space: nowrap; }
-    .age-normal  { color: var(--green); }
-    .age-warning { color: var(--orange); }
-    .age-critical{ color: var(--red); font-weight: 600; }
-    .line-item { margin-bottom: 4px; font-size: 13px; }
-    .variant, .sku { color: var(--muted); font-size: 11px; }
-    .badge {
-      display: inline-block;
-      padding: 3px 9px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600;
-      white-space: nowrap;
-    }
-    .badge-unfulfilled { background: #fdecea; color: var(--red); }
-    .badge-partial     { background: #fef3e2; color: var(--orange); }
-    .badge-hold        { background: #e8f4fd; color: #2980b9; }
-    .empty {
-      text-align: center;
-      padding: 60px;
-      color: var(--muted);
-    }
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 11px;
-      color: var(--muted);
-    }
-    @media (max-width: 768px) {
-      header, .stats, .table-wrap { padding-left: 16px; padding-right: 16px; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Susan Shaw Jewelry — Unfulfilled Orders Report</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; }
+        .header { background: #1a1a2e; color: white; padding: 24px 32px; }
+        .header h1 { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+        .header p { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .summary { display: flex; gap: 16px; padding: 20px 32px; background: white; border-bottom: 1px solid #e0e0e0; flex-wrap: wrap; }
+        .stat-card { background: #f9f9f9; border: 1px solid #e8e8e8; border-radius: 8px; padding: 14px 20px; min-width: 140px; }
+        .stat-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #888; }
+        .stat-card .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+        .stat-card.critical .value { color: #c0392b; }
+        .stat-card.warning .value { color: #e67e22; }
+        .stat-card.total .value { color: #2c3e50; }
+        .stat-card.money .value { color: #27ae60; font-size: 20px; }
+        .container { padding: 20px 32px; }
+        .legend { display: flex; gap: 20px; margin-bottom: 16px; font-size: 13px; flex-wrap: wrap; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+        .dot-critical { background: #fde8e8; border: 1px solid #f5c6cb; }
+        .dot-warning { background: #fff3cd; border: 1px solid #ffeeba; }
+        .dot-normal { background: white; border: 1px solid #e0e0e0; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-size: 13px; }
+        th { background: #2c3e50; color: white; padding: 12px 14px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; }
+        td { padding: 11px 14px; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+        td small { color: #888; font-size: 11px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(0,0,0,0.02); }
+        .row-critical td { background: #fde8e8; }
+        .row-critical:hover td { background: #fbd5d5; }
+        .row-warning td { background: #fff8e1; }
+        .row-warning:hover td { background: #fff0c0; }
+        .age-cell { font-weight: 700; }
+        .row-critical .age-cell { color: #c0392b; }
+        .row-warning .age-cell { color: #e67e22; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+        .status-paid { background: #d4edda; color: #155724; }
+        .status-partially-paid { background: #fff3cd; color: #856404; }
+        .status-pending { background: #e2e3e5; color: #383d41; }
+        .status-refunded { background: #f8d7da; color: #721c24; }
+        .status-unfulfilled { background: #cce5ff; color: #004085; }
+        .status-partially-fulfilled { background: #d1ecf1; color: #0c5460; }
+        .status-on-hold { background: #e2e3e5; color: #383d41; }
+        a { color: #2980b9; text-decoration: none; font-weight: 600; }
+        a:hover { text-decoration: underline; }
+        .footer { text-align: center; padding: 20px; color: #aaa; font-size: 12px; }
+    </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>&#9888; Unfulfilled Orders &mdash; 14 to 60 Days Old</h1>
-      <div class="meta">Susan Shaw Jewelry &nbsp;&middot;&nbsp; Generated April 29, 2026 at 04:01 PM UTC</div>
+    <div class="header">
+        <h1>Susan Shaw Jewelry — Unfulfilled Orders Report</h1>
+        <p>Generated: April 29, 2026 at 04:07 PM UTC &nbsp;|&nbsp; Orders 14–60 days old that require fulfillment</p>
     </div>
-  </header>
-
-  <div class="stats">
-    <div class="stat-card">
-      <div class="label">Orders</div>
-      <div class="value">88</div>
+    <div class="summary">
+        <div class="stat-card total">
+            <div class="label">Total Orders</div>
+            <div class="value">47</div>
+        </div>
+        <div class="stat-card critical">
+            <div class="label">Critical (45–60d)</div>
+            <div class="value">2</div>
+        </div>
+        <div class="stat-card warning">
+            <div class="label">Warning (30–44d)</div>
+            <div class="value">3</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Recent (14–29d)</div>
+            <div class="value">42</div>
+        </div>
+        <div class="stat-card money">
+            <div class="label">Total Value</div>
+            <div class="value">$9,606.03</div>
+        </div>
     </div>
-    <div class="stat-card">
-      <div class="label">Total Value</div>
-      <div class="value highlight">$15,074.51</div>
+    <div class="container">
+        <div class="legend">
+            <span style="font-size:13px; color:#666; font-weight:500;">Row colors:</span>
+            <div class="legend-item"><div class="legend-dot dot-critical"></div> 45–60 days (critical)</div>
+            <div class="legend-item"><div class="legend-dot dot-warning"></div> 30–44 days (warning)</div>
+            <div class="legend-item"><div class="legend-dot dot-normal"></div> 14–29 days</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Created</th>
+                    <th>Age</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                    <th>Fulfillment</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+        <tr class="row-critical">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6542768144599" target="_blank">#251398</a></td>
+            <td>Mar 08, 2026</td>
+            <td class="age-cell">52d</td>
+            <td>Lori Huberlie<br><small>lori.huberlie@gmail.com</small></td>
+            <td>USA 250 Pearl Necklace (x1), Free Returns + Package Protection (x1)</td>
+            <td>$176.73</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-critical">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6546189648087" target="_blank">#251770</a></td>
+            <td>Mar 10, 2026</td>
+            <td class="age-cell">49d</td>
+            <td>Rosemary Hodges<br><small>rosemaryh@covtrav.com</small></td>
+            <td>USA 250 Pearl Necklace (x1), Free Returns + Package Protection (x1)</td>
+            <td>$158.57</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-warning">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6554306773207" target="_blank">#252716</a></td>
+            <td>Mar 16, 2026</td>
+            <td class="age-cell">44d</td>
+            <td>mary card<br><small>mary.mina@live.com</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$158.57</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-warning">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6555563688151" target="_blank">#252848</a></td>
+            <td>Mar 17, 2026</td>
+            <td class="age-cell">43d</td>
+            <td>Janis Shelton<br><small>jjs7070@aol.com</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$159.90</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-warning">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6560668418263" target="_blank">#253470</a></td>
+            <td>Mar 21, 2026</td>
+            <td class="age-cell">39d</td>
+            <td>Ann Moses<br><small>annmoses11@hotmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$158.36</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6575874998487" target="_blank">#255157</a></td>
+            <td>Apr 01, 2026</td>
+            <td class="age-cell">28d</td>
+            <td>Jan Hargrove<br><small>jan_grayson_scott@charter.net</small></td>
+            <td>Free Returns + Package Protection (x1), Filigree Earrings (x1)</td>
+            <td>$69.21</td>
+            <td><span class="status-badge status-voided">VOIDED</span></td>
+            <td><span class="status-badge status-on-hold">On Hold</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6583639048407" target="_blank">#256183</a></td>
+            <td>Apr 07, 2026</td>
+            <td class="age-cell">22d</td>
+            <td>Andrea Hill<br><small>ahill@arhillcpa.com</small></td>
+            <td>Free Returns + Package Protection (x1), Blue & White Lapis Gold Bracelet (x1), Cross Intaglio Stone Necklace (x1)</td>
+            <td>$204.98</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6585743311063" target="_blank">#256705</a></td>
+            <td>Apr 08, 2026</td>
+            <td class="age-cell">20d</td>
+            <td>Marsha Mitchell<br><small>mgmtigers@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$161.46</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6586423509207" target="_blank">#256830</a></td>
+            <td>Apr 09, 2026</td>
+            <td class="age-cell">20d</td>
+            <td>Lew Erickson<br><small>lewerickson@aol.com</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$176.73</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6586531250391" target="_blank">#256863</a></td>
+            <td>Apr 09, 2026</td>
+            <td class="age-cell">20d</td>
+            <td>Betsy Jones<br><small>bcjones26@comcast.net</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$189.10</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6587260862679" target="_blank">#257025</a></td>
+            <td>Apr 10, 2026</td>
+            <td class="age-cell">19d</td>
+            <td>Hannah Wright<br><small>hannahwrightangus@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Madeline Studs (x1), Rectangle Ring (x1)</td>
+            <td>$148.86</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6587877064919" target="_blank">#257142</a></td>
+            <td>Apr 10, 2026</td>
+            <td class="age-cell">19d</td>
+            <td>Van Anh Peters<br><small>drspeters@att.net</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Madeline Studs (x1)</td>
+            <td>$143.90</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6588010266839" target="_blank">#257174</a></td>
+            <td>Apr 10, 2026</td>
+            <td class="age-cell">18d</td>
+            <td>Rebecca Person<br><small>rebfperson@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Roma Studs (x1), Rectangle Ring (x1)</td>
+            <td>$145.52</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6588260614359" target="_blank">#257253</a></td>
+            <td>Apr 10, 2026</td>
+            <td class="age-cell">18d</td>
+            <td>Sarah Dameris<br><small>sdameris@mac.com</small></td>
+            <td>Rectangle Ring (x1), Alys Cross Necklace (x1), Jade Double Strand Necklace (x1), Dogwood Studs (x1), Hannah Butterfly Paperclip Necklace (x1), Dogwood Ring (x1), Ida Paperclip Necklace (x1), Multi Strand Turquoise + Coin Necklace (x1), Free Returns + Package Protection (x1)</td>
+            <td>$860.33</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6588303737047" target="_blank">#257273</a></td>
+            <td>Apr 10, 2026</td>
+            <td class="age-cell">18d</td>
+            <td>Carrie Brown<br><small>carrietimbrown08@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Madeline Studs (x1), Rectangle Ring (x1)</td>
+            <td>$135.98</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6588510732503" target="_blank">#257350</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">18d</td>
+            <td>Melissa Waldron<br><small>melissasprattwaldron@hmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Roma Studs (x1), Rectangle Ring (x1)</td>
+            <td>$145.22</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6588678275287" target="_blank">#257412</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">18d</td>
+            <td>Callie M Griffin<br><small>dcsdc14@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Circle Ring (x1), Rectangle Ring (x1)</td>
+            <td>$123.06</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589217833175" target="_blank">#257531</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">18d</td>
+            <td>Laura Baron<br><small>fabulousideas@aol.com</small></td>
+            <td>Free Returns + Package Protection (x1), Malta 1976 Paperclip Necklace (x1), Rectangle Ring (x1)</td>
+            <td>$173.73</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589362012375" target="_blank">#257560</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Bryan Rachel Miller<br><small>bryanrachel25@yahoo.com</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Caroline Ring (x1)</td>
+            <td>$140.08</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589515235543" target="_blank">#257599</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Michelle Durden<br><small>michellewdurden@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Caroline Ring (x1), Rectangle Ring (x1)</td>
+            <td>$137.90</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589621928151" target="_blank">#257626</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Roxana Austin<br><small>roxymuzc@aol.com</small></td>
+            <td>Free Returns + Package Protection (x1), Square Cross Earrings (x1), Rectangle Ring (x1), Roma Studs (x1)</td>
+            <td>$221.90</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589684646103" target="_blank">#257647</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Rhonda Marsh<br><small>susanmarsh60@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Roma Studs (x1), Rectangle Ring (x1)</td>
+            <td>$149.58</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589799235799" target="_blank">#257681</a></td>
+            <td>Apr 11, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Carley Zimmerman<br><small>carley6235@hotmail.com</small></td>
+            <td>Roma Studs (x1), Rectangle Ring (x1)</td>
+            <td>$132.00</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589820666071" target="_blank">#257686</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Claudia Edwards<br><small>francesce45@yahoo.com</small></td>
+            <td>Free Returns + Package Protection (x1), USA 250 Pearl Necklace (x1)</td>
+            <td>$189.20</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589855498455" target="_blank">#257702</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Cody Dorsey<br><small>cabdorsey@yahoo.com</small></td>
+            <td>Dogwood Cotton Pearl Drop Earrings (x1), Longhorn Drop Earrings (x1), Blue & White Threader Earrings (x1), Rectangle Ring (x1), Free Returns + Package Protection (x1)</td>
+            <td>$235.66</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6589900521687" target="_blank">#257723</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Jeananne Hawking<br><small>jhawking1@yahoo.com</small></td>
+            <td>Rectangle Ring (x1), Caroline Ring (x1), Free Returns + Package Protection (x1)</td>
+            <td>$138.67</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590042472663" target="_blank">#257750</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Maggie Loukatos<br><small>maglou19@yahoo.com</small></td>
+            <td>Free Returns + Package Protection (x1), Charlotte Deux Tier Earrings (x1), Rectangle Ring (x1)</td>
+            <td>$144.23</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590300848343" target="_blank">#257773</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Susan Coon<br><small>sue.coon59@gmail.com</small></td>
+            <td>Rectangle Ring (x1), Roma Studs (x1)</td>
+            <td>$139.24</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590328340695" target="_blank">#257780</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">17d</td>
+            <td>Arlene Sherburne<br><small>asherburne40@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Caroline Ring (x1)</td>
+            <td>$137.60</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590558273751" target="_blank">#257871</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Susan Russell<br><small>russe825@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Roma Studs (x1), Rectangle Ring (x1)</td>
+            <td>$145.52</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590615355607" target="_blank">#257895</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Andrea Lacefield<br><small>alacefield@cox.net</small></td>
+            <td>Mary Cross Studs (x1), Square Cross Studs (x1), Rectangle Ring (x1), Cross Toggle Necklace (x1), Free Returns + Package Protection (x1)</td>
+            <td>$295.06</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590620401879" target="_blank">#257897</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Cynthia Garner<br><small>cynthiagar17@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Caroline Ring (x1)</td>
+            <td>$139.14</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590710284503" target="_blank">#257914</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Peggy Wilkinson<br><small>peggywilkinson1@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Circle Ring (x1)</td>
+            <td>$121.95</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590779654359" target="_blank">#257940</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>molly barber<br><small>sunglassesmc@yahoo.com</small></td>
+            <td>Textured Classic Hoops (x1), Shape Tier Earrings (x1), Rectangle Ring (x1), Double Loop Chain Necklace (x1)</td>
+            <td>$298.91</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590781522135" target="_blank">#257942</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Chris Owens<br><small>christie.m.owens@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Roma Ring (x1), Pearl Cab Ring (x1), Caroline Ring (x1), Rectangle Ring (x1)</td>
+            <td>$269.15</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590813241559" target="_blank">#257956</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Lesley Bowen<br><small>lesley.bowen@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Pearl Cab Multi-Strand Pearl Necklace (x1), Rectangle Ring (x1)</td>
+            <td>$299.03</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590943723735" target="_blank">#258003</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Jamie Garavaglia<br><small>sermanja@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Ida Paperclip Necklace (x1), Rectangle Ring (x1)</td>
+            <td>$176.20</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6590994251991" target="_blank">#258027</a></td>
+            <td>Apr 12, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Dru Cessna<br><small>cessna.dru@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Ida Studs (x1), Rectangle Ring (x1)</td>
+            <td>$148.52</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591044714711" target="_blank">#258048</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Jennifer B Comer<br><small>jcomer@comporium.net</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Circle Ring (x1)</td>
+            <td>$122.50</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591119851735" target="_blank">#258080</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Jennifer Peterson<br><small>jenpeterson.trigirl@gmail.com</small></td>
+            <td>Ida Paperclip Necklace (x1), Rectangle Ring (x1), Malta 1976 Paperclip Necklace (x1), Hannah Butterfly Cuff (x1), Hannah Butterfly Cuff (x2), Free Returns + Package Protection (x1)</td>
+            <td>$530.98</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591158419671" target="_blank">#258100</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Heather Atkinson<br><small>hjseigler@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Rectangle Ring (x1), Open Clover Toggle Necklace (x1), Dogwood Studs (x1), Ginkgo Earrings (x1)</td>
+            <td>$315.36</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591553732823" target="_blank">#258148</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Dr. Whitney Ross<br><small>wbrnyc@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Tiger Intaglio Studs (x1), Tiger Intaglio Studs (x1), Charlotte Deux Tier Earrings (x1), Madeline Studs (x1), Rectangle Ring (x1)</td>
+            <td>$376.15</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591603704023" target="_blank">#258160</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Tara Coakley<br><small>tara@coakley.com</small></td>
+            <td>Madeline Studs (x1), Rectangle Ring (x1)</td>
+            <td>$132.00</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591734153431" target="_blank">#258198</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Susie Smith<br><small>susiesmith61@aol.com</small></td>
+            <td>Free Returns + Package Protection (x1), Alys Necklace (x1), Fleur-De-Lis Stone Bracelet (x1), Fleur-De-Lis Intaglio Toggle Necklace (x1), Alys Necklace (x1), Bailey Stretch Bracelet (x1), Rectangle Ring (x1)</td>
+            <td>$443.62</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6591780356311" target="_blank">#258221</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">16d</td>
+            <td>Susan Hayes<br><small>susanmeredithhayes@me.com</small></td>
+            <td>Rectangle Ring (x1), Charlotte Dainty Necklace (x1), Alys Cross Necklace (x1), Free Returns + Package Protection (x1)</td>
+            <td>$242.92</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6592213811415" target="_blank">#258347</a></td>
+            <td>Apr 13, 2026</td>
+            <td class="age-cell">15d</td>
+            <td>Caroline Kernell<br><small>mkernell@bellsouth.net</small></td>
+            <td>Small Paperclip Necklace (x1), Alys Necklace (x1), Free Returns + Package Protection (x1)</td>
+            <td>$130.93</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+        <tr class="row-normal">
+            <td><a href="https://admin.shopify.com/store/susan-shaw/orders/6593005879511" target="_blank">#258551</a></td>
+            <td>Apr 14, 2026</td>
+            <td class="age-cell">15d</td>
+            <td>Barbara Grainger<br><small>barbargrainger@gmail.com</small></td>
+            <td>Free Returns + Package Protection (x1), Pearl Ginkgo Earrings (x1), Pearl Ginkgo Earrings (x1)</td>
+            <td>$161.82</td>
+            <td><span class="status-badge status-paid">PAID</span></td>
+            <td><span class="status-badge status-unfulfilled">Unfulfilled</span></td>
+        </tr>
+            </tbody>
+        </table>
     </div>
-  </div>
-
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Order</th>
-          <th>Date Placed</th>
-          <th>Age</th>
-          <th>Customer</th>
-          <th>Items</th>
-          <th>Total</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        
-        <tr>
-          <td><span class="order-link">#251398</span></td>
-          <td>Mar 08, 2026</td>
-          <td class="age-warning"><strong>52</strong> days</td>
-          <td>Lori Huberlie<br><span class="email">lori.huberlie@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.73</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$176.73</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#251770</span></td>
-          <td>Mar 10, 2026</td>
-          <td class="age-warning"><strong>49</strong> days</td>
-          <td>Rosemary Hodges<br><span class="email">rosemaryh@covtrav.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$158.57</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#252716</span></td>
-          <td>Mar 16, 2026</td>
-          <td class="age-warning"><strong>44</strong> days</td>
-          <td>mary card<br><span class="email">mary.mina@live.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$158.57</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#252848</span></td>
-          <td>Mar 17, 2026</td>
-          <td class="age-warning"><strong>43</strong> days</td>
-          <td>Janis Shelton<br><span class="email">jjs7070@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$159.90</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#253470</span></td>
-          <td>Mar 21, 2026</td>
-          <td class="age-warning"><strong>39</strong> days</td>
-          <td>Ann Moses<br><span class="email">annmoses11@hotmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$158.36</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#255157</span></td>
-          <td>Apr 01, 2026</td>
-          <td class="age-normal"><strong>28</strong> days</td>
-          <td>Jan Hargrove<br><span class="email">jan_grayson_scott@charter.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$2.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Filigree Earrings <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1842</span></div></td>
-          <td class="price">$69.21</td>
-          <td><span class="badge badge-hold">On Hold</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#256183</span></td>
-          <td>Apr 07, 2026</td>
-          <td class="age-normal"><strong>22</strong> days</td>
-          <td>Andrea Hill<br><span class="email">ahill@arhillcpa.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Blue & White Lapis Gold Bracelet <span class='sku'>SKU: 2307g</span></div>
-<div class='line-item'>&times; 1 Cross Intaglio Stone Necklace <span class='variant'>Red Coral</span> <span class='sku'>SKU: Red Coral - 3909CG</span></div></td>
-          <td class="price">$204.98</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#256207</span></td>
-          <td>Apr 07, 2026</td>
-          <td class="age-normal"><strong>22</strong> days</td>
-          <td>Pamela Amburgy<br><span class="email">pamela.amburgy@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$6.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Pearl Cross Multi-Strand Necklace <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 3731C</span></div>
-<div class='line-item'>&times; 1 Double Link Chain Necklace <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 3495G</span></div></td>
-          <td class="price">$337.98</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#256223</span></td>
-          <td>Apr 07, 2026</td>
-          <td class="age-normal"><strong>22</strong> days</td>
-          <td>Melissa Gasaway<br><span class="email">mkgasaway@hotmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Diana Knot Studs <span class='sku'>SKU: 1700A</span></div>
-<div class='line-item'>&times; 1 Square Cotton Pearl Drop Earrings <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1819W</span></div>
-<div class='line-item'>&times; 1 Bamboo Hoops <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1489G</span></div>
-<div class='line-item'>&times; 1 Carolina Hoops <span class='sku'>SKU: 1566g</span></div></td>
-          <td class="price">$239.68</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#256705</span></td>
-          <td>Apr 08, 2026</td>
-          <td class="age-normal"><strong>20</strong> days</td>
-          <td>Marsha Mitchell<br><span class="email">mgmtigers@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$161.46</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#256830</span></td>
-          <td>Apr 09, 2026</td>
-          <td class="age-normal"><strong>20</strong> days</td>
-          <td>Lew Erickson<br><span class="email">lewerickson@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$176.73</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#256863</span></td>
-          <td>Apr 09, 2026</td>
-          <td class="age-normal"><strong>20</strong> days</td>
-          <td>Betsy Jones<br><span class="email">bcjones26@comcast.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$189.10</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257025</span></td>
-          <td>Apr 10, 2026</td>
-          <td class="age-normal"><strong>19</strong> days</td>
-          <td>Hannah Wright<br><span class="email">hannahwrightangus@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Madeline Studs <span class='variant'>Bubblegum Pink / Post Back</span> <span class='sku'>SKU: 1735PK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$148.86</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257142</span></td>
-          <td>Apr 10, 2026</td>
-          <td class="age-normal"><strong>19</strong> days</td>
-          <td>Van Anh Peters<br><span class="email">drspeters@att.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Madeline Studs <span class='variant'>Spring Green / Post Back</span> <span class='sku'>SKU: 1735GR</span></div></td>
-          <td class="price">$143.90</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257174</span></td>
-          <td>Apr 10, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Rebecca Person<br><span class="email">rebfperson@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$145.52</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257191</span></td>
-          <td>Apr 10, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Dee Williford<br><span class="email">deewilliford@hotmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Bailey Stretch Bracelet <span class='variant'>Pink Jade</span> <span class='sku'>SKU: 2507G</span></div></td>
-          <td class="price">$121.61</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257253</span></td>
-          <td>Apr 10, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Sarah Dameris<br><span class="email">sdameris@mac.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Alys Cross Necklace <span class='variant'>Light Green</span> <span class='sku'>SKU: 3342GR</span></div>
-<div class='line-item'>&times; 1 Jade Double Strand Necklace <span class='variant'>Light Pink</span> <span class='sku'>SKU: 3881PK</span></div>
-<div class='line-item'>&times; 1 Dogwood Studs <span class='sku'>SKU: 1175G</span></div>
-<div class='line-item'>&times; 1 Hannah Butterfly Paperclip Necklace <span class='sku'>SKU: 3695B</span></div>
-<div class='line-item'>&times; 1 Dogwood Ring <span class='sku'>SKU: 9175G</span></div>
-<div class='line-item'>&times; 1 Ida Paperclip Necklace <span class='variant'>Blue Lapis</span> <span class='sku'>SKU: 3749BL</span></div>
-<div class='line-item'>&times; 1 Multi Strand Turquoise + Coin Necklace <span class='sku'>SKU: 3666CR</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$13.73</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$860.33</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257273</span></td>
-          <td>Apr 10, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Carrie Brown<br><span class="email">carrietimbrown08@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Madeline Studs <span class='variant'>Bubblegum Pink / Post Back</span> <span class='sku'>SKU: 1735PK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$135.98</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257350</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Melissa Waldron<br><span class="email">melissasprattwaldron@hmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$145.22</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257412</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Callie M Griffin<br><span class="email">dcsdc14@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Circle Ring <span class='sku'>SKU: 9012G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$123.06</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257421</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Susan Ford<br><span class="email">sford93040@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Farrah Beaded Necklace <span class='variant'>Bright Pink</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$145.85</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257454</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>18</strong> days</td>
-          <td>Suzette Bruening<br><span class="email">sbruening@sbcglobal.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$85.24</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257531</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Laura Baron<br><span class="email">fabulousideas@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Malta 1976 Paperclip Necklace <span class='sku'>SKU: 3307G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$173.73</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257560</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Bryan Rachel Miller<br><span class="email">bryanrachel25@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Caroline Ring <span class='variant'>Green Jade</span> <span class='sku'>SKU: 9180GJ</span></div></td>
-          <td class="price">$140.08</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257569</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Lynn Dee Martin<br><span class="email">lynndeem@comcast.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$114.73</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257575</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Mary Martinez<br><span class="email">monteshorto@att.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.48</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Venetian Glass Bee Bracelet <span class='variant'>Aqua</span> <span class='sku'>SKU: Aqua - 2580AQ</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$171.56</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257599</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Michelle Durden<br><span class="email">michellewdurden@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Caroline Ring <span class='variant'>Green Jade</span> <span class='sku'>SKU: 9180GJ</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$137.90</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257601</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Pat Morey<br><span class="email">patpatmorey@hotmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Gold Toggle Extender <span class='sku'>SKU: 4500sg</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$101.77</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257609</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Deborah Walter<br><span class="email">jdwalter1027@comcast.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Dainty Cross Necklace <span class='variant'>Gold</span> <span class='sku'>SKU: 3726N</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 2 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$224.72</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257626</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Roxana Austin<br><span class="email">roxymuzc@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Square Cross Earrings <span class='variant'>Silver</span> <span class='sku'>SKU: Silver - 1510CS</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div></td>
-          <td class="price">$221.90</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257647</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Rhonda Marsh<br><span class="email">susanmarsh60@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$149.58</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257661</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>June Burch<br><span class="email">burchj180@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Filigree Earrings <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1842</span></div>
-<div class='line-item'>&times; 1 Swirl Cut Out Earrings <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1256G</span></div>
-<div class='line-item'>&times; 1 Woven Loop Earrings <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1268G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$209.77</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257681</span></td>
-          <td>Apr 11, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Carley Zimmerman<br><span class="email">carley6235@hotmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$132.00</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257686</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Claudia Edwards<br><span class="email">francesce45@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 USA 250 Pearl Necklace <span class='sku'>SKU: 3943W</span></div></td>
-          <td class="price">$189.20</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257702</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Cody Dorsey<br><span class="email">cabdorsey@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Dogwood Cotton Pearl Drop Earrings <span class='sku'>SKU: 1049W</span></div>
-<div class='line-item'>&times; 1 Longhorn Drop Earrings <span class='sku'>SKU: 1013G</span></div>
-<div class='line-item'>&times; 1 Blue & White Threader Earrings <span class='sku'>SKU: 1311G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$5.23</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$235.66</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257723</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Jeananne Hawking<br><span class="email">jhawking1@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Caroline Ring <span class='variant'>White Agate</span> <span class='sku'>SKU: 9180W</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$138.67</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257750</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Maggie Loukatos<br><span class="email">maglou19@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Charlotte Deux Tier Earrings <span class='variant'>Black</span> <span class='sku'>SKU: 1080j</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$144.23</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257765</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Terri Burdick<br><span class="email">terriburdick66@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Florence Italian Bee Coin Ring <span class='sku'>SKU: 9613BG</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$131.64</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257773</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Susan Coon<br><span class="email">sue.coon59@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div></td>
-          <td class="price">$139.24</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257780</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Arlene Sherburne<br><span class="email">asherburne40@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Caroline Ring <span class='variant'>Green Jade</span> <span class='sku'>SKU: 9180GJ</span></div></td>
-          <td class="price">$137.60</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257803</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Mary beth Scherrey<br><span class="email">mbscherrey@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Felicity Toggle Bracelet <span class='sku'>SKU: 2545G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$151.56</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257818</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Johanna Koparanyan<br><span class="email">jkopa@rocketmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$5.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Cross Paperclip Bracelet <span class='sku'>SKU: 2695C</span></div>
-<div class='line-item'>&times; 1 Greek Coin Earrings <span class='sku'>SKU: 1371G</span></div>
-<div class='line-item'>&times; 1 Feather Cuff Studs <span class='sku'>SKU: 1672G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$221.23</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257833</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Kimberly hanley<br><span class="email">hanleykim@comcast.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$86.86</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257841</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>17</strong> days</td>
-          <td>Sandy Hill<br><span class="email">sandhill86@hotmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$2.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$75.06</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257857</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>MaryBeth Sullivan<br><span class="email">mbcook0226@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$71.15</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257865</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Patti Campanella<br><span class="email">campanella10@sbcglobal.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$2.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$74.84</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257871</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Susan Russell<br><span class="email">russe825@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Roma Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1186BK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$145.52</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257895</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Andrea Lacefield<br><span class="email">alacefield@cox.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Mary Cross Studs <span class='sku'>SKU: 1511G</span></div>
-<div class='line-item'>&times; 1 Square Cross Studs <span class='variant'>Silver</span> <span class='sku'>SKU: 1509CS</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Cross Toggle Necklace <span class='variant'>Silver / 16 inches</span> <span class='sku'>SKU: 3510CS-16</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$5.98</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$295.06</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257897</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Cynthia Garner<br><span class="email">cynthiagar17@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Caroline Ring <span class='variant'>White Agate</span> <span class='sku'>SKU: 9180W</span></div></td>
-          <td class="price">$139.14</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257914</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Peggy Wilkinson<br><span class="email">peggywilkinson1@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Circle Ring <span class='sku'>SKU: 9012G</span></div></td>
-          <td class="price">$121.95</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257940</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>molly barber<br><span class="email">sunglassesmc@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Textured Classic Hoops <span class='sku'>SKU: 1483G</span></div>
-<div class='line-item'>&times; 1 Shape Tier Earrings <span class='sku'>SKU: 1590G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Double Loop Chain Necklace <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 3475G</span></div></td>
-          <td class="price">$298.91</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257942</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Chris Owens<br><span class="email">christie.m.owens@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$5.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Roma Ring <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 9961BK</span></div>
-<div class='line-item'>&times; 1 Pearl Cab Ring <span class='sku'>SKU: 9018WG</span></div>
-<div class='line-item'>&times; 1 Caroline Ring <span class='variant'>Turquoise</span> <span class='sku'>SKU: 9180TQ</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$269.15</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#257956</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Lesley Bowen<br><span class="email">lesley.bowen@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$6.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Pearl Cab Multi-Strand Pearl Necklace <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 3731W</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$299.03</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258002</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Marsha Goodman<br><span class="email">marsha.j.goodman@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$82.39</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258003</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Jamie Garavaglia<br><span class="email">sermanja@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.48</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Ida Paperclip Necklace <span class='variant'>Mother Of Pearl</span> <span class='sku'>SKU: 3749W</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$176.20</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258022</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Kim Astin<br><span class="email">kastin0123@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.48</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Roma Coin Ring <span class='sku'>SKU: 9961G</span></div>
-<div class='line-item'>&times; 1 Circle Ring <span class='sku'>SKU: 9012G</span></div></td>
-          <td class="price">$121.72</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258027</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Dru Cessna<br><span class="email">cessna.dru@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Ida Studs <span class='variant'>Black Onyx</span> <span class='sku'>SKU: 1749BK</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$148.52</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258039</span></td>
-          <td>Apr 12, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Gloria Delgado<br><span class="email">gcdelgado27@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$5.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Charlotte Studs <span class='variant'>Black</span></div>
-<div class='line-item'>&times; 1 Mary Cross Studs <span class='sku'>SKU: 1511G</span></div>
-<div class='line-item'>&times; 1 Pearl Scroll Studs <span class='variant'>Post Back / Gold</span> <span class='sku'>SKU: 1452W</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$260.05</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258048</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Jennifer B Comer<br><span class="email">jcomer@comporium.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Circle Ring <span class='sku'>SKU: 9012G</span></div></td>
-          <td class="price">$122.50</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258080</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Jennifer Peterson<br><span class="email">jenpeterson.trigirl@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Ida Paperclip Necklace <span class='variant'>Mother Of Pearl</span> <span class='sku'>SKU: 3749W</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Malta 1976 Paperclip Necklace <span class='sku'>SKU: 3307G</span></div>
-<div class='line-item'>&times; 1 Hannah Butterfly Cuff <span class='sku'>SKU: 2361G</span></div>
-<div class='line-item'>&times; 2 Hannah Butterfly Cuff <span class='sku'>SKU: 2361G</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$9.98</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$530.98</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258096</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Katie Hermann<br><span class="email">hermannsoccermom@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Forget-Me-Not Studs <span class='sku'>SKU: 1150G</span></div>
-<div class='line-item'>&times; 3 Bee Earrings <span class='variant'>Gold</span> <span class='sku'>SKU: Gold - 1210WR</span></div>
-<div class='line-item'>&times; 1 Bentley Earrings <span class='variant'>Blue Lapis</span> <span class='sku'>SKU: 1905G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$314.82</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258100</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Heather Atkinson<br><span class="email">hjseigler@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$6.48</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Open Clover Toggle Necklace <span class='variant'>Gold / 16 inches</span> <span class='sku'>SKU: 3510VG-16</span></div>
-<div class='line-item'>&times; 1 Dogwood Studs <span class='sku'>SKU: 1175G</span></div>
-<div class='line-item'>&times; 1 Ginkgo Earrings <span class='sku'>SKU: 1069G</span></div></td>
-          <td class="price">$315.36</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258129</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Swoyer Linda<br><span class="email">laswoyer@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$2.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$74.36</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258130</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Swoyer Linda<br><span class="email">laswoyer@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$86.01</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258139</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Michele Bouchard<br><span class="email">michele@bouchard.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.48</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Compass Toggle Necklace <span class='variant'>16 inches</span> <span class='sku'>SKU: 3995n-16</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$176.47</td>
-          <td><span class="badge badge-partial">Partially Fulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258142</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Cindy Anderson<br><span class="email">cinmsu@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$85.04</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258146</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Susan Hayes<br><span class="email">smshayes@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Studs <span class='sku'>SKU: 1467G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$131.95</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258148</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Dr. Whitney Ross<br><span class="email">wbrnyc@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$7.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Tiger Intaglio Studs <span class='sku'>SKU: 1680TG</span></div>
-<div class='line-item'>&times; 1 Tiger Intaglio Studs <span class='sku'>SKU: 1680TG</span></div>
-<div class='line-item'>&times; 1 Charlotte Deux Tier Earrings <span class='variant'>Tangerine</span> <span class='sku'>SKU: 1080or</span></div>
-<div class='line-item'>&times; 1 Madeline Studs <span class='variant'>Peri Purple / Post Back</span> <span class='sku'>SKU: 1735PU</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$376.15</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258153</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Hope McAlister<br><span class="email">hopemcalister@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$84.85</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258156</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Monica Braun<br><span class="email">monicabraun11@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$77.00</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258160</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Tara Coakley<br><span class="email">tara@coakley.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Madeline Studs <span class='variant'>Spring Green / Post Back</span> <span class='sku'>SKU: 1735GR</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$132.00</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258161</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Margaret Jones<br><span class="email">goldenmegs17@icloud.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$88.66</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258163</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Mary Rabalais<br><span class="email">rabalaismb@bellsouth.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Roma Coin Ring <span class='sku'>SKU: 9961G</span></div></td>
-          <td class="price">$118.80</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258168</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Lee Ann Loggins<br><span class="email">leeannloggins@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$86.86</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258187</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Jamie Cheatham<br><span class="email">jamiedcheatham@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Mini Margaret Bracelet <span class='variant'>Gold</span> <span class='sku'>SKU: 2420G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$221.91</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258189</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Mary Lambright<br><span class="email">ritchteach@sbcglobal.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$86.86</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258198</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Susie Smith<br><span class="email">susiesmith61@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$7.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Alys Necklace <span class='variant'>Red Coral</span> <span class='sku'>SKU: 3340R</span></div>
-<div class='line-item'>&times; 1 Fleur-De-Lis Stone Bracelet <span class='variant'>Blue Lapis</span> <span class='sku'>SKU: Blue Lapis - 2905FG</span></div>
-<div class='line-item'>&times; 1 Fleur-De-Lis Intaglio Toggle Necklace <span class='variant'>16 inches / Gold</span> <span class='sku'>SKU: 3995f-16</span></div>
-<div class='line-item'>&times; 1 Alys Necklace <span class='variant'>Blue Lapis</span> <span class='sku'>SKU: 3340BL</span></div>
-<div class='line-item'>&times; 1 Bailey Stretch Bracelet <span class='variant'>Red Coral</span> <span class='sku'>SKU: 2909G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$443.62</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258204</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Janette Livata<br><span class="email">janette@janettelicata.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$2.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$69.34</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258209</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Cheryl Grossman<br><span class="email">cegrossman@yahoo.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$2.98</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$75.06</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258212</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Gina Keohan<br><span class="email">ginakeohan@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Bird Bam Mahjong Toggle Bracelet <span class='sku'>SKU: 2088G</span></div></td>
-          <td class="price">$150.23</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258214</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Terri Riser<br><span class="email">terri.riser@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Mary Cross Studs <span class='sku'>SKU: 1511G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$119.88</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258218</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Alice Anderson<br><span class="email">abonner88@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$86.86</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258219</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Patrice Lynch<br><span class="email">bandplynch@aol.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$85.04</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258221</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Susan Hayes<br><span class="email">susanmeredithhayes@me.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div>
-<div class='line-item'>&times; 1 Charlotte Dainty Necklace <span class='variant'>Sapphire Blue</span> <span class='sku'>SKU: 3080sb</span></div>
-<div class='line-item'>&times; 1 Alys Cross Necklace <span class='variant'>Turquoise</span> <span class='sku'>SKU: 3342CT</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$5.48</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$242.92</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258231</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>16</strong> days</td>
-          <td>Jennifer Huskey<br><span class="email">jhuskey@cnbtn.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$87.74</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258235</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>15</strong> days</td>
-          <td>Elaine Fish<br><span class="email">emfish54@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Rectangle Studs <span class='sku'>SKU: 1467G</span></div>
-<div class='line-item'>&times; 1 Rectangle Ring <span class='sku'>SKU: 9013G</span></div></td>
-          <td class="price">$131.33</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258347</span></td>
-          <td>Apr 13, 2026</td>
-          <td class="age-normal"><strong>15</strong> days</td>
-          <td>Caroline Kernell<br><span class="email">mkernell@bellsouth.net</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Small Paperclip Necklace <span class='variant'>Gold</span> <span class='sku'>SKU: 3694GS</span></div>
-<div class='line-item'>&times; 1 Alys Necklace <span class='variant'>Baby Blue</span> <span class='sku'>SKU: 3340BB</span></div>
-<div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$3.73</span> <span class='sku'>SKU: x-redo</span></div></td>
-          <td class="price">$130.93</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-        <tr>
-          <td><span class="order-link">#258551</span></td>
-          <td>Apr 14, 2026</td>
-          <td class="age-normal"><strong>15</strong> days</td>
-          <td>Barbara Grainger<br><span class="email">barbargrainger@gmail.com</span></td>
-          <td class="items-cell"><div class='line-item'>&times; 1 Free Returns + Package Protection <span class='variant'>$4.23</span> <span class='sku'>SKU: x-redo</span></div>
-<div class='line-item'>&times; 1 Pearl Ginkgo Earrings <span class='sku'>SKU: 1071wg</span></div>
-<div class='line-item'>&times; 1 Pearl Ginkgo Earrings <span class='sku'>SKU: 1071wg</span></div></td>
-          <td class="price">$161.82</td>
-          <td><span class="badge badge-unfulfilled">Unfulfilled</span></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <footer>Auto-generated daily &nbsp;&middot;&nbsp; Susan Shaw Jewelry &nbsp;&middot;&nbsp; Filter: Unfulfilled orders 14&ndash;60 days old &nbsp;&middot;&nbsp; Oldest first</footer>
+    <div class="footer">Susan Shaw Jewelry · Daily Report · 2026-04-29</div>
 </body>
 </html>
